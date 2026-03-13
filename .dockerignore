@@ -1,0 +1,40 @@
+# .dockerignore (project-root 기준)
+
+# Python 관련 캐시
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# 가상환경
+.venv/
+env/
+ENV/
+
+# Git
+.git/
+.gitignore
+
+# 환경 변수
+.env
+
+# Docker, 빌드 관련
+docker-compose.override.yml
+*.log
+*.sqlite3
+*.db
+
+# PyCharm / VSCode / 기타 IDE
+.idea/
+*.iml
+.vscode/
+
+# 빌드 폴더
+build/
+dist/
+*.egg-info/
+
+# 임시 파일
+*.swp
+*.swo
+tmp/

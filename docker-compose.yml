@@ -1,0 +1,120 @@
+services:
+
+  # PostgreSQL DB
+  postgres:
+    image: postgres:15
+    container_name: product_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: product_pass
+      POSTGRES_DB: product_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product_user -d product_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Celery
+  redis:
+    image: redis:7
+    container_name: product_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  # FastAPI Data Server
+  data-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: data_server
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    environment: &common-env
+      DATABASE_URL: postgresql://product_user:product_pass@postgres:5432/product_db
+      REDIS_URL: redis://redis:6379/0
+      RUN_MIGRATIONS: "true"
+    volumes:
+      - .:/app
+
+  # Crawler Worker
+  crawler-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: crawler_worker
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      PYTHONPATH: /app
+    command: python -m app.worker.crawler_worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+  # Cluster Worker
+  cluster-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: cluster_worker
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      PYTHONPATH: /app
+    command: python -m app.worker.cluster_worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: celery_worker
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      PYTHONPATH: /app
+    command: celery -A app.celery.celery_app worker --loglevel=info
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - .:/app
+
+  # Celery Beat Scheduler
+  celery-beat:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: celery_beat
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      PYTHONPATH: /app
+    command: celery -A app.celery.celery_app beat --loglevel=info
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:

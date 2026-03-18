@@ -69,10 +69,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: celery_worker_crawl
     restart: unless-stopped
-    command: celery -A app.celery.celery_app worker
-      --loglevel=info
-      --queues=crawl
-      --concurrency=4
+    command: celery -A app.celery.celery_app worker --loglevel=info --queues=crawl --concurrency=4
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,10 +86,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: celery_worker_cluster
     restart: unless-stopped
-    command: celery -A app.celery.celery_app worker
-      --loglevel=info
-      --queues=cluster
-      --concurrency=2
+    command: celery -A app.celery.celery_app worker --loglevel=info --queues=cluster --concurrency=2
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,6 +111,29 @@ services:
       <<: *python-env
     volumes:
       - .:/app
+
+  # ──────────────────────────────────────────
+  # Spring Boot
+  # ──────────────────────────────────────────
+  spring-server:
+    build:
+      context: ./spring-server
+      dockerfile: Dockerfile
+    container_name: spring_server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
+      SPRING_DATASOURCE_USERNAME: product_user
+      SPRING_DATASOURCE_PASSWORD: product_pass
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
 
 volumes:
   postgres_data:

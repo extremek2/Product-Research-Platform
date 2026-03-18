@@ -1,25 +1,11 @@
 from app.celery.celery_app import celery_app
-
-from app.clustering.cluster_engine import build_clusters
-from app.pipeline.cluster_pipeline import save_clusters
-
-from app.db.database import SessionLocal
-from app.models.product import Product
+from app.pipeline.cluster_pipeline import run_cluster_pipeline
 
 
-@celery_app.task
-def cluster_task():
-
-    db = SessionLocal()
-
+@celery_app.task(bind=True, max_retries=3)
+def cluster_task(self):
     try:
-
-        products = db.query(Product).all()
-
-        clusters = build_clusters(products)
-
-        save_clusters(clusters)
-
-    finally:
-
-        db.close()
+        count = run_cluster_pipeline()
+        return {"clusters_saved": count}
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=60)

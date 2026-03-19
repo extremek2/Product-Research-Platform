@@ -12,6 +12,7 @@ celery_app = Celery(
         "app.tasks.trend_task",
         "app.tasks.crawl_task",
         "app.tasks.cluster_task",
+        "app.tasks.wholesale_task",
     ]
 )
 

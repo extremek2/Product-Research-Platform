@@ -55,6 +55,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
       NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
+      DOMEGGOOK_API_KEY: ${DOMEGGOOK_API_KEY}
       PYTHONPATH: /app
       RUN_MIGRATIONS: "true"
     volumes:

@@ -34,13 +34,13 @@ services:
       retries: 5
 
   # ──────────────────────────────────────────
-  # FastAPI
+  # AI Server (FastAPI + Celery)
   # ──────────────────────────────────────────
-  api-server:
+  ai-server:
     build:
-      context: .
+      context: ./ai-server
       dockerfile: docker/Dockerfile
-    container_name: api_server
+    container_name: ai_server
     restart: unless-stopped
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
@@ -59,14 +59,14 @@ services:
       PYTHONPATH: /app
       RUN_MIGRATIONS: "true"
     volumes:
-      - .:/app
+      - ./ai-server:/app
 
   # ──────────────────────────────────────────
   # Celery Workers
   # ──────────────────────────────────────────
   celery-worker-crawl:
     build:
-      context: .
+      context: ./ai-server
       dockerfile: docker/Dockerfile
     container_name: celery_worker_crawl
     restart: unless-stopped
@@ -79,11 +79,11 @@ services:
     environment:
       <<: *python-env
     volumes:
-      - .:/app
+      - ./ai-server:/app
 
   celery-worker-cluster:
     build:
-      context: .
+      context: ./ai-server
       dockerfile: docker/Dockerfile
     container_name: celery_worker_cluster
     restart: unless-stopped
@@ -96,11 +96,11 @@ services:
     environment:
       <<: *python-env
     volumes:
-      - .:/app
+      - ./ai-server:/app
 
   celery-beat:
     build:
-      context: .
+      context: ./ai-server
       dockerfile: docker/Dockerfile
     container_name: celery_beat
     restart: unless-stopped
@@ -111,16 +111,16 @@ services:
     environment:
       <<: *python-env
     volumes:
-      - .:/app
+      - ./ai-server:/app
 
   # ──────────────────────────────────────────
-  # Spring Boot
+  # API Server (Spring Boot)
   # ──────────────────────────────────────────
-  spring-server:
+  api-server:
     build:
-      context: ./spring-server
+      context: ./api-server
       dockerfile: Dockerfile
-    container_name: spring_server
+    container_name: api_server
     restart: unless-stopped
     depends_on:
       postgres:

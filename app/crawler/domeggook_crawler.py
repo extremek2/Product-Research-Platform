@@ -1,10 +1,10 @@
 import requests
 from typing import List, Dict
-from app.crawler.base import BaseCrawler
+from app.crawler.base import WholesaleCrawler
 from app.core.config import DOMEGGOOK_API_KEY
 
 
-class DomeggookCrawler(BaseCrawler):
+class DomeggookCrawler(WholesaleCrawler):
     BASE_URL = "https://domeggook.com/ssl/api/"
 
     def __init__(self):

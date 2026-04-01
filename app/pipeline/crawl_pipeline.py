@@ -2,7 +2,7 @@ from app.db.database import SessionLocal
 from app.models.source_product import SourceProduct
 from app.models.product import Product
 from app.normalization.product_normalizer import normalize_title
-from app.crawler.naver_shopping import NaverShoppingCrawler
+from app.crawler.naver_shopping_v2 import NaverShoppingCrawler
 
 
 def run_crawl_pipeline(keyword: str) -> int:

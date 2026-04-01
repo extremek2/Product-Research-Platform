@@ -13,6 +13,7 @@ celery_app = Celery(
         "app.tasks.crawl_task",
         "app.tasks.cluster_task",
         "app.tasks.wholesale_task",
+        "app.tasks.popular_task",
     ]
 )
 

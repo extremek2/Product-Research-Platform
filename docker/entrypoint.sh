@@ -7,7 +7,6 @@ fi
 
 echo "Waiting for Postgres..."
 until pg_isready -h postgres -p 5432 -U product_user; do
-    echo "Postgres unavailable - retrying in 2s"
     sleep 2
 done
 echo "Postgres is ready!"
@@ -20,6 +19,10 @@ from app.models.base import Base
 from app.models import product, source_product, product_cluster, product_cluster_item, product_snapshot
 from app.models.sku_master import SkuMaster
 from app.models.wholesale_product import WholesaleProduct, WholesaleSource
+from app.models.retail_source import RetailSource
+from app.models.retail_popular_product import RetailPopularProduct
+from app.models.trend_analysis import TrendAnalysis
+from app.models.sourcing_candidate import SourcingCandidate
 Base.metadata.create_all(bind=engine)
 print('Tables created.')
 "

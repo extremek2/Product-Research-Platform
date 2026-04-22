@@ -8,8 +8,8 @@ def crawl_wholesale_domeggook(self, keyword: str):
     """도매꾹 + 도매매 통합 수집"""
     try:
         crawler = DomeggookCrawler()
-        items = crawler.search_all(keyword, display=50)
-        saved = run_wholesale_pipeline(keyword, items)
+        items   = crawler.search_all(keyword, display=50)
+        saved   = run_wholesale_pipeline(keyword, items)
         return {"keyword": keyword, "saved": saved, "total_fetched": len(items)}
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60)

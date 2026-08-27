@@ -48,6 +48,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api-server:
+        condition: service_healthy
     ports:
       - "8000:8000"
     environment: &python-env
@@ -57,7 +59,7 @@ services:
       NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
       DOMEGGOOK_API_KEY: ${DOMEGGOOK_API_KEY}
       PYTHONPATH: /app
-      RUN_MIGRATIONS: "true"
+      # Database schema migrations are managed exclusively by Spring Boot Flyway.
     volumes:
       - ./ai-server:/app
 
@@ -76,6 +78,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api-server:
+        condition: service_healthy
     environment:
       <<: *python-env
     volumes:
@@ -93,6 +97,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api-server:
+        condition: service_healthy
     environment:
       <<: *python-env
     volumes:
@@ -107,6 +113,8 @@ services:
     command: celery -A app.celery.celery_app beat --loglevel=info -s /tmp/celerybeat-schedule
     depends_on:
       redis:
+        condition: service_healthy
+      api-server:
         condition: service_healthy
     environment:
       <<: *python-env
@@ -135,6 +143,12 @@ services:
       SPRING_DATASOURCE_PASSWORD: product_pass
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
 
 volumes:
   postgres_data:

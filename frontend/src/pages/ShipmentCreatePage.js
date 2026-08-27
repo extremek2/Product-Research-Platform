@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { createShipment } from "../api/shipmentApi";
-import { useWorkspace } from "../context/WorkspaceContext";
 import { ErrorMessage } from "../components/Feedback";
 
 const initial = { caseNumber: "", direction: "IMPORT", transportMode: "SEA", currentStage: "PREPARATION", priority: "NORMAL", carrierName: "", vesselName: "", voyageNumber: "", flightNumber: "", originLocationCode: "", originLocationName: "", destinationLocationCode: "", destinationLocationName: "", etd: "", eta: "", cargoDescription: "", packageCount: "", grossWeight: "", weightUnit: "KG", containerCount: "" };
@@ -8,11 +7,10 @@ const nullableNumber = (value) => value === "" ? null : Number(value);
 const nullableDate = (value) => value || null;
 
 export default function ShipmentCreatePage({ navigate }) {
-  const { workspace } = useWorkspace();
   const [form, setForm] = useState(initial); const [error, setError] = useState(""); const [submitting, setSubmitting] = useState(false);
   const change = e => setForm({ ...form, [e.target.name]: e.target.value });
   const submit = async e => { e.preventDefault(); setSubmitting(true); setError("");
-    try { const result = await createShipment({ ...form, ownerOrganizationId: workspace.organizationId, createdByUserId: workspace.ownerUserId,
+    try { const result = await createShipment({ ...form,
       etd: nullableDate(form.etd), eta: nullableDate(form.eta), packageCount: nullableNumber(form.packageCount), grossWeight: nullableNumber(form.grossWeight), containerCount: nullableNumber(form.containerCount) }); navigate(`/shipments/${result.shipmentId}`); }
     catch (err) { setError(err.message); } finally { setSubmitting(false); }
   };

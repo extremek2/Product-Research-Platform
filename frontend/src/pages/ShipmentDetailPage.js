@@ -1,20 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { addTransportDocument, archiveShipment, getShipment, updateShipment } from "../api/shipmentApi";
-import { useWorkspace } from "../context/WorkspaceContext";
 import { ErrorMessage, LoadingState } from "../components/Feedback";
 import StatusBadge, { displayLabel } from "../components/StatusBadge";
 
 const date = value => value ? new Date(value).toLocaleString("ko-KR") : "미정";
 
 export default function ShipmentDetailPage({ shipmentId, navigate }) {
-  const { workspace } = useWorkspace(); const [shipment, setShipment] = useState(null); const [error, setError] = useState(""); const [loading, setLoading] = useState(true);
+  const [shipment, setShipment] = useState(null); const [error, setError] = useState(""); const [loading, setLoading] = useState(true);
   const [edit, setEdit] = useState({ currentStage: "", status: "", priority: "" });
   const [document, setDocument] = useState({ documentType: "MBL", documentNumber: "", issuerName: "", primary: true });
-  const load = useCallback(async () => { setLoading(true); setError(""); try { const data = await getShipment(shipmentId, workspace.organizationId); setShipment(data); setEdit({ currentStage: data.currentStage, status: data.status, priority: data.priority }); } catch (err) { setError(err.message); } finally { setLoading(false); } }, [shipmentId, workspace.organizationId]);
+  const load = useCallback(async () => { setLoading(true); setError(""); try { const data = await getShipment(shipmentId); setShipment(data); setEdit({ currentStage: data.currentStage, status: data.status, priority: data.priority }); } catch (err) { setError(err.message); } finally { setLoading(false); } }, [shipmentId]);
   useEffect(() => { load(); }, [load]);
-  const save = async () => { setError(""); try { const data = await updateShipment(shipmentId, workspace.organizationId, { version: shipment.version, ...edit }); setShipment(data); } catch (err) { setError(err.message); } };
-  const archive = async () => { if (!window.confirm("이 화물을 보관하시겠습니까?")) return; try { await archiveShipment(shipmentId, workspace.organizationId); navigate("/"); } catch (err) { setError(err.message); } };
-  const submitDocument = async e => { e.preventDefault(); setError(""); try { await addTransportDocument(shipmentId, workspace.organizationId, document); setDocument({ ...document, documentNumber: "", issuerName: "" }); await load(); } catch (err) { setError(err.message); } };
+  const save = async () => { setError(""); try { const data = await updateShipment(shipmentId, { version: shipment.version, ...edit }); setShipment(data); } catch (err) { setError(err.message); } };
+  const archive = async () => { if (!window.confirm("이 화물을 보관하시겠습니까?")) return; try { await archiveShipment(shipmentId); navigate("/"); } catch (err) { setError(err.message); } };
+  const submitDocument = async e => { e.preventDefault(); setError(""); try { await addTransportDocument(shipmentId, document); setDocument({ ...document, documentNumber: "", issuerName: "" }); await load(); } catch (err) { setError(err.message); } };
   if (loading) return <LoadingState label="화물 상세 정보를 불러오는 중입니다."/>;
   if (!shipment) return <><ErrorMessage message={error}/><button className="button secondary" onClick={() => navigate("/")}>현황으로</button></>;
   return <><header className="page-header"><div><button className="back" onClick={() => navigate("/")}>← 현황으로</button><div className="title-row"><h1>{shipment.caseNumber}</h1><StatusBadge value={shipment.priority}/></div><p>{shipment.direction === "IMPORT" ? "수입" : "수출"} · {shipment.transportMode} · {shipment.carrierName || "운송사 미정"}</p></div>{!shipment.archivedAt && <button className="button danger" onClick={archive}>Archive</button>}</header>

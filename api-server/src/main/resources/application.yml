@@ -36,6 +36,13 @@ springdoc:
 server:
   port: 8080
 
+app:
+  auth:
+    jwt-secret: ${JWT_SECRET:local-development-secret-change-me-1234567890}
+    access-token-minutes: ${ACCESS_TOKEN_MINUTES:15}
+    refresh-token-days: ${REFRESH_TOKEN_DAYS:14}
+    secure-cookie: ${AUTH_SECURE_COOKIE:false}
+
 management:
   endpoint:
     health:

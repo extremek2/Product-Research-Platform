@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import AppLayout from "./components/AppLayout";
-import { WorkspaceProvider, useWorkspace } from "./context/WorkspaceContext";
-import OrganizationSetupPage from "./pages/OrganizationSetupPage";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import AuthPage from "./pages/AuthPage";
+import { LoadingState } from "./components/Feedback";
 import ShipmentDashboardPage from "./pages/ShipmentDashboardPage";
 import ShipmentCreatePage from "./pages/ShipmentCreatePage";
 import ShipmentDetailPage from "./pages/ShipmentDetailPage";
@@ -16,8 +17,9 @@ function usePath() {
 }
 
 function Routes() {
-  const { workspace } = useWorkspace(); const [path, navigate] = usePath();
-  if (!workspace) return <OrganizationSetupPage/>;
+  const { user, loading } = useAuth(); const [path, navigate] = usePath();
+  if (loading) return <LoadingState label="세션을 확인하는 중입니다."/>;
+  if (!user) return <AuthPage/>;
   let page;
   if (path === "/research") return <ResearchPage onExit={() => navigate("/")}/>;
   else if (path === "/shipments/new") page = <ShipmentCreatePage navigate={navigate}/>;
@@ -26,4 +28,4 @@ function Routes() {
   return <AppLayout path={path} navigate={navigate}>{page}</AppLayout>;
 }
 
-export default function App() { return <WorkspaceProvider><Routes/></WorkspaceProvider>; }
+export default function App() { return <AuthProvider><Routes/></AuthProvider>; }

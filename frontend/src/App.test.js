@@ -1,35 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-beforeEach(() => {
-  localStorage.clear();
-  window.history.pushState({}, '', '/');
-  jest.restoreAllMocks();
-});
+beforeEach(() => { window.history.pushState({}, '', '/'); jest.restoreAllMocks(); });
 
-test('조직이 없으면 화주 조직 생성 화면을 표시한다', () => {
+test('세션이 없으면 로그인 화면을 표시한다', async () => {
+  jest.spyOn(global, 'fetch').mockResolvedValue({ ok: false, status: 401, json: async () => ({ success: false }) });
   render(<App />);
-  expect(screen.getByRole('heading', { name: '화주 조직 생성' })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '작업 공간 만들기' })).toBeInTheDocument();
+  expect((await screen.findAllByRole('button', { name: '로그인' })).length).toBe(2);
+  expect(screen.getByRole('button', { name: '화주 회원가입' })).toBeInTheDocument();
 });
 
-test('조직 컨텍스트가 있으면 화물 현황과 API 데이터를 표시한다', async () => {
-  localStorage.setItem('trade-operation-workspace', JSON.stringify({
-    organizationId: 'org-public-id', ownerUserId: 'user-public-id',
-    organizationName: 'ABC Trading', ownerEmail: 'ops@example.com',
-  }));
-  jest.spyOn(global, 'fetch').mockResolvedValue({
-    ok: true,
-    json: async () => ({ success: true, data: [{
-      shipmentId: 'shipment-public-id', caseNumber: 'IMP-2026-001', priority: 'URGENT',
-      status: 'OPEN', currentStage: 'IN_TRANSIT', direction: 'IMPORT', transportMode: 'SEA',
-      originLocationCode: 'CNSHA', destinationLocationCode: 'KRPUS', eta: '2026-09-01T09:00:00',
-    }] }),
+test('Refresh 세션이 있으면 인증된 조직의 화물을 표시한다', async () => {
+  jest.spyOn(global, 'fetch').mockImplementation(async url => {
+    if (String(url).includes('/auth/refresh')) return { ok: true, json: async () => ({ success: true, data: { accessToken: 'access-token', user: { organizationName: 'ABC Trading', email: 'ops@example.com', role: 'OWNER' } } }) };
+    return { ok: true, json: async () => ({ success: true, data: [{ shipmentId:'shipment-id', caseNumber:'IMP-2026-001', priority:'URGENT', status:'OPEN', currentStage:'IN_TRANSIT', transportMode:'SEA', originLocationCode:'CNSHA', destinationLocationCode:'KRPUS' }] }) };
   });
-
   render(<App />);
-
   expect(await screen.findByText('IMP-2026-001')).toBeInTheDocument();
   expect(screen.getByText('ABC Trading')).toBeInTheDocument();
-  expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('organizationId=org-public-id'), expect.any(Object));
+  expect(global.fetch).toHaveBeenCalledWith(expect.stringMatching(/\/shipments\?/), expect.objectContaining({ credentials:'include' }));
 });

@@ -6,5 +6,6 @@ import java.util.*;
 
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     Optional<AppUser> findByPublicId(UUID publicId);
+    Optional<AppUser> findByEmailIgnoreCase(String email);
     boolean existsByEmailIgnoreCase(String email);
 }

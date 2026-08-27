@@ -1,7 +1,7 @@
 package com.productresearch.apiserver.domain.shipment.service;
 
 import com.productresearch.apiserver.domain.identity.entity.*;
-import com.productresearch.apiserver.domain.identity.service.IdentityService;
+import com.productresearch.apiserver.domain.auth.service.CurrentActor;
 import com.productresearch.apiserver.domain.shipment.dto.*;
 import com.productresearch.apiserver.domain.shipment.entity.*;
 import com.productresearch.apiserver.domain.shipment.repository.*;
@@ -19,12 +19,13 @@ import java.util.*;
 public class ShipmentService {
     private final ShipmentCaseRepository shipmentRepository;
     private final TransportDocumentRepository documentRepository;
-    private final IdentityService identityService;
+    private final CurrentActor currentActor;
 
     @Transactional
     public ShipmentResponse create(CreateShipmentRequest request) {
-        Organization organization = identityService.requireOrganization(request.ownerOrganizationId());
-        AppUser creator = identityService.requireMember(request.createdByUserId(), organization);
+        CurrentActor.Context actor = currentActor.require();
+        Organization organization = actor.organization();
+        AppUser creator = actor.user();
         if (shipmentRepository.existsByOwnerOrganizationIdAndCaseNumber(organization.getId(), request.caseNumber())) {
             throw new BusinessException("조직 내에서 이미 사용 중인 화물 관리번호입니다.");
         }
@@ -39,8 +40,9 @@ public class ShipmentService {
     }
 
     @Transactional(readOnly = true)
-    public List<ShipmentResponse> findAll(UUID organizationId, ShipmentCase.Status status, ShipmentCase.Priority priority,
+    public List<ShipmentResponse> findAll(ShipmentCase.Status status, ShipmentCase.Priority priority,
                                           ShipmentCase.Stage stage, boolean includeArchived) {
+        UUID organizationId = currentActor.require().organization().getPublicId();
         Specification<ShipmentCase> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("ownerOrganization").get("publicId"), organizationId));
@@ -55,13 +57,13 @@ public class ShipmentService {
     }
 
     @Transactional(readOnly = true)
-    public ShipmentResponse findOne(UUID shipmentId, UUID organizationId) {
-        return response(requireShipment(shipmentId, organizationId), true);
+    public ShipmentResponse findOne(UUID shipmentId) {
+        return response(requireShipment(shipmentId), true);
     }
 
     @Transactional
-    public ShipmentResponse update(UUID shipmentId, UUID organizationId, UpdateShipmentRequest request) {
-        ShipmentCase shipment = requireShipment(shipmentId, organizationId);
+    public ShipmentResponse update(UUID shipmentId, UpdateShipmentRequest request) {
+        ShipmentCase shipment = requireShipment(shipmentId);
         if (!Objects.equals(shipment.getVersion(), request.version())) {
             throw new BusinessException("다른 사용자가 먼저 수정했습니다. 최신 데이터를 다시 조회해 주세요.");
         }
@@ -77,15 +79,15 @@ public class ShipmentService {
     }
 
     @Transactional
-    public ShipmentResponse archive(UUID shipmentId, UUID organizationId) {
-        ShipmentCase shipment = requireShipment(shipmentId, organizationId);
+    public ShipmentResponse archive(UUID shipmentId) {
+        ShipmentCase shipment = requireShipment(shipmentId);
         shipment.archive();
         return response(shipment, true);
     }
 
     @Transactional
-    public TransportDocumentResponse addDocument(UUID shipmentId, UUID organizationId, CreateTransportDocumentRequest request) {
-        ShipmentCase shipment = requireShipment(shipmentId, organizationId);
+    public TransportDocumentResponse addDocument(UUID shipmentId, CreateTransportDocumentRequest request) {
+        ShipmentCase shipment = requireShipment(shipmentId);
         if (shipment.getArchivedAt() != null) throw new BusinessException("보관된 화물에는 문서를 추가할 수 없습니다.");
         if (documentRepository.existsByShipmentCaseIdAndDocumentTypeAndDocumentNumber(
                 shipment.getId(), request.documentType(), request.documentNumber())) {
@@ -96,13 +98,14 @@ public class ShipmentService {
     }
 
     @Transactional(readOnly = true)
-    public List<TransportDocumentResponse> findDocuments(UUID shipmentId, UUID organizationId) {
-        ShipmentCase shipment = requireShipment(shipmentId, organizationId);
+    public List<TransportDocumentResponse> findDocuments(UUID shipmentId) {
+        ShipmentCase shipment = requireShipment(shipmentId);
         return documentRepository.findAllByShipmentCaseIdOrderByCreatedAtAsc(shipment.getId())
                 .stream().map(TransportDocumentResponse::from).toList();
     }
 
-    private ShipmentCase requireShipment(UUID shipmentId, UUID organizationId) {
+    private ShipmentCase requireShipment(UUID shipmentId) {
+        UUID organizationId = currentActor.require().organization().getPublicId();
         return shipmentRepository.findByPublicIdAndOwnerOrganizationPublicId(shipmentId, organizationId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 조직의 화물을 찾을 수 없습니다."));
     }

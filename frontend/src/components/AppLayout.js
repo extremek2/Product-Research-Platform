@@ -1,4 +1,4 @@
-import { useWorkspace } from "../context/WorkspaceContext";
+import { useAuth } from "../context/AuthContext";
 
 const navigation = [
   { path: "/", label: "화물 현황" },
@@ -7,7 +7,7 @@ const navigation = [
 ];
 
 export default function AppLayout({ path, navigate, children }) {
-  const { workspace, setWorkspace } = useWorkspace();
+  const { user, logout } = useAuth();
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -21,12 +21,12 @@ export default function AppLayout({ path, navigate, children }) {
                     onClick={() => navigate(item.path)}>{item.label}</button>
           ))}
         </nav>
-        {workspace && (
+        {user && (
           <div className="workspace-card">
             <span>현재 조직</span>
-            <strong>{workspace.organizationName}</strong>
-            <small>{workspace.ownerEmail}</small>
-            <button onClick={() => setWorkspace(null)}>조직 전환</button>
+            <strong>{user.organizationName}</strong>
+            <small>{user.email} · {user.role}</small>
+            <button onClick={logout}>로그아웃</button>
           </div>
         )}
       </aside>

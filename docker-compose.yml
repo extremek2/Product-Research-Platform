@@ -143,6 +143,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: product_pass
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-me-1234567890}
+      AUTH_SECURE_COOKIE: ${AUTH_SECURE_COOKIE:-false}
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health/readiness"]
       interval: 5s

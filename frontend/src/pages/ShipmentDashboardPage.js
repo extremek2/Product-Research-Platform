@@ -1,22 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getShipments } from "../api/shipmentApi";
-import { useWorkspace } from "../context/WorkspaceContext";
 import { EmptyState, ErrorMessage, LoadingState } from "../components/Feedback";
 import StatusBadge, { displayLabel } from "../components/StatusBadge";
 
 const formatDate = (value) => value ? new Intl.DateTimeFormat("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "미정";
 
 export default function ShipmentDashboardPage({ navigate }) {
-  const { workspace } = useWorkspace();
   const [shipments, setShipments] = useState([]);
   const [filters, setFilters] = useState({ priority: "", stage: "", includeArchived: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const load = useCallback(async () => {
     setLoading(true); setError("");
-    try { setShipments(await getShipments(workspace.organizationId, filters)); }
+    try { setShipments(await getShipments(filters)); }
     catch (err) { setError(err.message); } finally { setLoading(false); }
-  }, [workspace.organizationId, filters]);
+  }, [filters]);
   useEffect(() => { load(); }, [load]);
   const counts = useMemo(() => ({
     total: shipments.length,

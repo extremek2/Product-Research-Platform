@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.*;
 
 @RestController
@@ -17,6 +18,7 @@ public class ShipmentController {
     private final ShipmentService shipmentService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('OWNER','ADMIN','OPERATOR')")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ShipmentResponse> create(@Valid @RequestBody CreateShipmentRequest request) {
         return ApiResponse.ok("shipment created", shipmentService.create(request));
@@ -24,40 +26,41 @@ public class ShipmentController {
 
     @GetMapping
     public ApiResponse<List<ShipmentResponse>> findAll(
-            @RequestParam UUID organizationId,
             @RequestParam(required = false) ShipmentCase.Status status,
             @RequestParam(required = false) ShipmentCase.Priority priority,
             @RequestParam(required = false) ShipmentCase.Stage stage,
             @RequestParam(defaultValue = "false") boolean includeArchived) {
-        return ApiResponse.ok(shipmentService.findAll(organizationId, status, priority, stage, includeArchived));
+        return ApiResponse.ok(shipmentService.findAll(status, priority, stage, includeArchived));
     }
 
     @GetMapping("/{shipmentId}")
-    public ApiResponse<ShipmentResponse> findOne(@PathVariable UUID shipmentId, @RequestParam UUID organizationId) {
-        return ApiResponse.ok(shipmentService.findOne(shipmentId, organizationId));
+    public ApiResponse<ShipmentResponse> findOne(@PathVariable UUID shipmentId) {
+        return ApiResponse.ok(shipmentService.findOne(shipmentId));
     }
 
     @PatchMapping("/{shipmentId}")
-    public ApiResponse<ShipmentResponse> update(@PathVariable UUID shipmentId, @RequestParam UUID organizationId,
+    @PreAuthorize("hasAnyRole('OWNER','ADMIN','OPERATOR')")
+    public ApiResponse<ShipmentResponse> update(@PathVariable UUID shipmentId,
                                                 @Valid @RequestBody UpdateShipmentRequest request) {
-        return ApiResponse.ok(shipmentService.update(shipmentId, organizationId, request));
+        return ApiResponse.ok(shipmentService.update(shipmentId, request));
     }
 
     @PostMapping("/{shipmentId}/archive")
-    public ApiResponse<ShipmentResponse> archive(@PathVariable UUID shipmentId, @RequestParam UUID organizationId) {
-        return ApiResponse.ok(shipmentService.archive(shipmentId, organizationId));
+    @PreAuthorize("hasAnyRole('OWNER','ADMIN')")
+    public ApiResponse<ShipmentResponse> archive(@PathVariable UUID shipmentId) {
+        return ApiResponse.ok(shipmentService.archive(shipmentId));
     }
 
     @PostMapping("/{shipmentId}/documents")
+    @PreAuthorize("hasAnyRole('OWNER','ADMIN','OPERATOR')")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<TransportDocumentResponse> addDocument(@PathVariable UUID shipmentId, @RequestParam UUID organizationId,
+    public ApiResponse<TransportDocumentResponse> addDocument(@PathVariable UUID shipmentId,
                                                                @Valid @RequestBody CreateTransportDocumentRequest request) {
-        return ApiResponse.ok("document created", shipmentService.addDocument(shipmentId, organizationId, request));
+        return ApiResponse.ok("document created", shipmentService.addDocument(shipmentId, request));
     }
 
     @GetMapping("/{shipmentId}/documents")
-    public ApiResponse<List<TransportDocumentResponse>> findDocuments(@PathVariable UUID shipmentId,
-                                                                      @RequestParam UUID organizationId) {
-        return ApiResponse.ok(shipmentService.findDocuments(shipmentId, organizationId));
+    public ApiResponse<List<TransportDocumentResponse>> findDocuments(@PathVariable UUID shipmentId) {
+        return ApiResponse.ok(shipmentService.findDocuments(shipmentId));
     }
 }

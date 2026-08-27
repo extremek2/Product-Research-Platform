@@ -40,6 +40,15 @@ public class AppUser {
         this.status = Status.INVITED;
     }
 
+    public static AppUser registered(String email, String passwordHash, String name, String phone) {
+        AppUser user = new AppUser(email, name, phone);
+        user.passwordHash = passwordHash;
+        user.status = Status.ACTIVE;
+        return user;
+    }
+
+    public void recordLogin() { this.lastLoginAt = LocalDateTime.now(); }
+
     @PrePersist void create() { createdAt = updatedAt = LocalDateTime.now(); }
     @PreUpdate void update() { updatedAt = LocalDateTime.now(); }
 }

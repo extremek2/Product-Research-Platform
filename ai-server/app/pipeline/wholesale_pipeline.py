@@ -6,12 +6,6 @@ from app.normalization.sku_extractor import extract_sku
 from app.normalization.product_classifier import classify_product, ProductType
 from sqlalchemy import func
 
-SOURCE_NAME_MAP = {
-    "domeggook": "도매꾹",
-    "domeme": "도매매",
-}
-
-
 def _get_category_avg_price(db, keyword: str) -> float:
     """기존 수집된 데이터 기반 카테고리 평균가 계산"""
     result = db.query(func.avg(WholesaleProduct.price)).filter(
@@ -34,8 +28,9 @@ def run_wholesale_pipeline(keyword: str, items: list) -> int:
         pending_llm = 0
 
         for item in items:
-            source_name = SOURCE_NAME_MAP.get(item["source"], item["source"])
-            source = db.query(WholesaleSource).filter_by(name=source_name).first()
+            source = db.query(WholesaleSource).filter_by(
+                source_key=item["source"]
+            ).first()
             if not source:
                 continue
 

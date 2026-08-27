@@ -14,6 +14,8 @@ class SourceProduct(Base):
 
     source_product_id = Column(Text)
 
+    search_keyword = Column(Text)
+
     title = Column(Text)
 
     price = Column(Numeric)

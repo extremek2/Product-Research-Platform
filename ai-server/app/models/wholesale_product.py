@@ -9,6 +9,7 @@ class WholesaleSource(Base):
 
     id           = Column(BigInteger, primary_key=True)
     name         = Column(Text, nullable=False)
+    source_key   = Column(Text, unique=True, nullable=False)
     country      = Column(Text, default="KR")
     base_url     = Column(Text)
     crawler_type = Column(Text)
@@ -23,7 +24,7 @@ class WholesaleProduct(Base):
     sku_master_id     = Column(BigInteger, ForeignKey("sku_master.id"), nullable=True)
     source_id         = Column(BigInteger, ForeignKey("wholesale_source.id"))
     source_product_id = Column(Text)
-    trade_type        = Column(Text, default="CONSIGNMENT")
+    trade_type        = Column(Text, default="PURCHASE")
     title             = Column(Text, nullable=False)
     price             = Column(Numeric)
     currency          = Column(Text, default="KRW")

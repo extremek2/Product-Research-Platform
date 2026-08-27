@@ -1,0 +1,45 @@
+package com.productresearch.apiserver.domain.identity.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "app_user")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class AppUser {
+    public enum Status { ACTIVE, INACTIVE, INVITED }
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+    private UUID publicId;
+    @Column(nullable = false, unique = true)
+    private String email;
+    @Column(name = "password_hash")
+    private String passwordHash;
+    @Column(nullable = false)
+    private String name;
+    private String phone;
+    @Enumerated(EnumType.STRING) @Column(nullable = false)
+    private Status status;
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    public AppUser(String email, String name, String phone) {
+        this.publicId = UUID.randomUUID();
+        this.email = email.toLowerCase();
+        this.name = name;
+        this.phone = phone;
+        this.status = Status.INVITED;
+    }
+
+    @PrePersist void create() { createdAt = updatedAt = LocalDateTime.now(); }
+    @PreUpdate void update() { updatedAt = LocalDateTime.now(); }
+}

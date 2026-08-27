@@ -29,6 +29,7 @@ def run_crawl_pipeline(keyword: str) -> int:
             source = SourceProduct(
                 source=item["source"],
                 source_product_id=item["source_product_id"],
+                search_keyword=keyword,
                 title=item["title"],
                 price=item["price"],
                 seller=item["seller"],
@@ -40,6 +41,7 @@ def run_crawl_pipeline(keyword: str) -> int:
 
             # 2. product 변환 (정규화된 대표 상품)
             product = Product(
+                source_product_id=source.id,
                 title=normalize_title(item["title"]),
                 brand=_extract_brand(item["title"]),
                 category=None,      # 추후 카테고리 분류 로직 추가

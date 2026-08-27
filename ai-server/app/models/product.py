@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, Text, TIMESTAMP
+from sqlalchemy import Column, BigInteger, ForeignKey, Text, TIMESTAMP
 from sqlalchemy.sql import func
 
 from app.models.base import Base
@@ -9,6 +9,12 @@ class Product(Base):
     __tablename__ = "product"
 
     id = Column(BigInteger, primary_key=True)
+
+    source_product_id = Column(
+        BigInteger,
+        ForeignKey("source_product.id"),
+        unique=True,
+    )
 
     title = Column(Text, nullable=False)
 

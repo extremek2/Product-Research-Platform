@@ -10,10 +10,8 @@ celery_app = Celery(
     backend=REDIS_URL,
     include=[
         "app.tasks.trend_task",
-        "app.tasks.crawl_task",
         "app.tasks.cluster_task",
         "app.tasks.wholesale_task",
-        "app.tasks.popular_task",
     ]
 )
 
@@ -26,11 +24,10 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,  # 경고 제거
     task_routes={
         "app.tasks.trend_task.*":   {"queue": "crawl"},
-        "app.tasks.crawl_task.*":   {"queue": "crawl"},
         "app.tasks.cluster_task.*": {"queue": "cluster"},
     },
     beat_schedule={
-        # 1. 매일 23:50 트렌드 키워드 수집 → crawl_task 자동 발행
+        # 1. 매일 23:50 Shopping Insight 트렌드 키워드 수집
         "daily-trend": {
             "task": "app.tasks.trend_task.trend_task",
             "schedule": crontab(hour=23, minute=50),

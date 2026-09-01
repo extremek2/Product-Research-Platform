@@ -208,7 +208,7 @@ const styles = `
   /* Trigger buttons */
   .trigger-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
 
@@ -570,14 +570,11 @@ async function fetchClusterItems(id) {
   return j.data || [];
 }
 
-async function triggerTask(type, keyword = "") {
+async function triggerTask(type) {
   let url, body;
   if (type === "trend") {
     url = `${API}/trend/trigger`;
     body = {};
-  } else if (type === "crawl") {
-    url = `${API}/crawl/trigger`;
-    body = { keyword: keyword || "로봇청소기" };
   } else {
     url = `${API}/cluster/trigger`;
     body = {};
@@ -591,7 +588,7 @@ async function triggerTask(type, keyword = "") {
 }
 
 async function pollStatus(type, taskId) {
-  const endpoint = type === "crawl" ? "crawl" : type === "trend" ? "trend" : "cluster";
+  const endpoint = type === "trend" ? "trend" : "cluster";
   const r = await fetch(`${API}/${endpoint}/status/${taskId}`);
   return await r.json();
 }
@@ -618,7 +615,7 @@ function Dashboard({ onNavigate }) {
   const [clusters, setClusters] = useState([]);
   const [clusterItems, setClusterItems] = useState({});
   const [expandedCluster, setExpandedCluster] = useState(null);
-  const [taskStatus, setTaskStatus] = useState({ trend: "idle", crawl: "idle", cluster: "idle" });
+  const [taskStatus, setTaskStatus] = useState({ trend: "idle", cluster: "idle" });
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -735,7 +732,6 @@ function Dashboard({ onNavigate }) {
             <div className="trigger-grid">
               {[
                 { key: "trend", label: "트렌드 수집", sub: "데이터랩 → 키워드 추출" },
-                { key: "crawl", label: "상품 크롤링", sub: "네이버 쇼핑 API" },
                 { key: "cluster", label: "클러스터링", sub: "임베딩 + cosine" },
               ].map(({ key, label, sub }) => (
                 <button

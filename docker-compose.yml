@@ -55,8 +55,8 @@ services:
     environment: &python-env
       DATABASE_URL: postgresql://product_user:product_pass@postgres:5432/product_db
       REDIS_URL: redis://redis:6379/0
-      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
-      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
+      NAVER_API_HUB_CLIENT_ID: ${NAVER_API_HUB_CLIENT_ID}
+      NAVER_API_HUB_CLIENT_SECRET: ${NAVER_API_HUB_CLIENT_SECRET}
       DOMEGGOOK_API_KEY: ${DOMEGGOOK_API_KEY}
       PYTHONPATH: /app
       # Database schema migrations are managed exclusively by Spring Boot Flyway.

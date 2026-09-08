@@ -32,6 +32,9 @@ venv.bak/
 .env
 .env.test
 .env.local
+.env.production
+/ops/backups/
+/ops/tls/
 .flaskenv
 
 ### VS Code / IDE ###

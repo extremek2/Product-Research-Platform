@@ -25,6 +25,7 @@ public class AppUser {
     private String phone;
     @Enumerated(EnumType.STRING) @Column(nullable = false)
     private Status status;
+    @Column(name = "email_verified_at") private LocalDateTime emailVerifiedAt;
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -34,7 +35,7 @@ public class AppUser {
 
     public AppUser(String email, String name, String phone) {
         this.publicId = UUID.randomUUID();
-        this.email = email.toLowerCase();
+        this.email = email.trim().toLowerCase(java.util.Locale.ROOT);
         this.name = name;
         this.phone = phone;
         this.status = Status.INVITED;
@@ -46,6 +47,8 @@ public class AppUser {
         user.status = Status.ACTIVE;
         return user;
     }
+
+    public void verifyEmail() { if (emailVerifiedAt == null) emailVerifiedAt = LocalDateTime.now(); }
 
     public void recordLogin() { this.lastLoginAt = LocalDateTime.now(); }
 

@@ -7,5 +7,5 @@ export function EmptyState({ title, description, action }) {
 }
 
 export function ErrorMessage({ message }) {
-  return message ? <div className="alert error">{message}</div> : null;
+  return message ? <div className="alert error" role="alert">{message}</div> : null;
 }

@@ -1,6 +1,6 @@
 package com.productresearch.apiserver.domain.auth.service;
 
-import com.productresearch.apiserver.domain.identity.entity.*;
+import com.productresearch.apiserver.domain.auth.entity.RefreshSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.*;
@@ -18,13 +18,14 @@ public class TokenService {
     private final SecureRandom secureRandom = new SecureRandom();
     @Value("${app.auth.access-token-minutes}") private long accessMinutes;
 
-    public String createAccessToken(AppUser user, OrganizationMember member) {
+    public String createAccessToken(RefreshSession session, String authority) {
         Instant now = Instant.now();
-        JwtClaimsSet claims = JwtClaimsSet.builder().issuer("trade-ops-api").issuedAt(now)
-                .expiresAt(now.plus(Duration.ofMinutes(accessMinutes))).subject(user.getPublicId().toString())
-                .claim("organizationId", member.getOrganization().getPublicId().toString())
-                .claim("role", member.getMemberRole().name()).build();
-        return jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder().issuer("trade-ops-api").issuedAt(now)
+                .expiresAt(now.plus(Duration.ofMinutes(accessMinutes))).subject(session.getUser().getPublicId().toString())
+                .claim("session_id", session.getPublicId().toString())
+                .claim("session_kind", session.getSessionKind().name()).claim("role", authority);
+        if (session.getOrganization() != null) claims.claim("organizationId", session.getOrganization().getPublicId().toString());
+        return jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims.build())).getTokenValue();
     }
 
     public String newRefreshToken() {

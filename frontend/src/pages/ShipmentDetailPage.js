@@ -2,10 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { addTransportDocument, archiveShipment, getShipment, updateShipment } from "../api/shipmentApi";
 import { ErrorMessage, LoadingState } from "../components/Feedback";
 import StatusBadge, { displayLabel } from "../components/StatusBadge";
+import CasePartners from "../components/CasePartners";
+import { useAuth } from "../context/AuthContext";
 
 const date = value => value ? new Date(value).toLocaleString("ko-KR") : "미정";
 
 export default function ShipmentDetailPage({ shipmentId, navigate }) {
+  const { user } = useAuth();
   const [shipment, setShipment] = useState(null); const [error, setError] = useState(""); const [loading, setLoading] = useState(true);
   const [edit, setEdit] = useState({ currentStage: "", status: "", priority: "" });
   const [document, setDocument] = useState({ documentType: "MBL", documentNumber: "", issuerName: "", primary: true });
@@ -22,5 +25,6 @@ export default function ShipmentDetailPage({ shipmentId, navigate }) {
       <section className="panel"><div className="panel-header"><div><h2>업무 상태</h2><p className="muted">version {shipment.version}</p></div></div><div className="panel-body form-stack"><label>현재 단계<select value={edit.currentStage} onChange={e=>setEdit({...edit,currentStage:e.target.value})}>{["PREPARATION","BOOKING","DEPARTED","IN_TRANSIT","ARRIVED","CUSTOMS","DELIVERY","COMPLETED"].map(v=><option key={v} value={v}>{displayLabel(v)}</option>)}</select></label><label>상태<select value={edit.status} onChange={e=>setEdit({...edit,status:e.target.value})}>{["OPEN","ON_HOLD","COMPLETED","CANCELLED"].map(v=><option key={v} value={v}>{displayLabel(v)}</option>)}</select></label><label>중요도<select value={edit.priority} onChange={e=>setEdit({...edit,priority:e.target.value})}>{["NORMAL","ATTENTION","URGENT"].map(v=><option key={v} value={v}>{displayLabel(v)}</option>)}</select></label><button className="button primary" onClick={save}>변경 저장</button></div></section></div>
     <section className="panel"><div className="panel-header"><div><h2>운송 문서</h2><p className="muted">B/L 또는 Booking 번호를 화물에 연결합니다.</p></div></div><div className="document-layout"><div>{shipment.documents.length === 0 ? <p className="muted document-empty">등록된 문서가 없습니다.</p> : <ul className="document-list">{shipment.documents.map(doc=><li key={doc.documentId}><StatusBadge value={doc.documentType}/><div><strong>{doc.documentNumber}</strong><small>{doc.issuerName || "발행자 미입력"}{doc.primary ? " · Primary" : ""}</small></div></li>)}</ul>}</div>
       {!shipment.archivedAt && <form className="document-form" onSubmit={submitDocument}><select value={document.documentType} onChange={e=>setDocument({...document,documentType:e.target.value})}>{["MBL","HBL","MAWB","HAWB","BOOKING","OTHER"].map(v=><option key={v}>{v}</option>)}</select><input required placeholder="문서번호" value={document.documentNumber} onChange={e=>setDocument({...document,documentNumber:e.target.value})}/><input placeholder="발행자" value={document.issuerName} onChange={e=>setDocument({...document,issuerName:e.target.value})}/><button className="button secondary">문서 추가</button></form>}</div></section>
+    {["OWNER", "ADMIN"].includes(user.role) && <CasePartners key={shipmentId} shipmentId={shipmentId} archived={!!shipment.archivedAt}/>}
   </>;
 }

@@ -14,6 +14,8 @@ public class OrganizationMember {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Version @Column(nullable = false)
+    private long version;
     @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "organization_id")
     private Organization organization;
     @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "user_id")
@@ -33,4 +35,9 @@ public class OrganizationMember {
     }
 
     @PrePersist void create() { joinedAt = LocalDateTime.now(); }
+
+    public void change(Role role, Status status) {
+        this.memberRole = role;
+        this.status = status;
+    }
 }

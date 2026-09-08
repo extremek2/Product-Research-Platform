@@ -31,20 +31,32 @@ import java.util.List;
 public class SecurityConfig {
 
     @Value("${app.auth.jwt-secret}") private String jwtSecret;
+    @Value("${app.auth.allowed-origins:http://localhost:3000}") private String allowedOrigins;
+    @Value("${app.research-enabled:true}") private boolean researchEnabled;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @org.springframework.context.annotation.Profile("!bootstrap-admin & !maintenance")
+    public SecurityFilterChain filterChain(HttpSecurity http, com.productresearch.apiserver.domain.auth.service.SessionJwtAuthenticationConverter converter) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> {
+                    if (!researchEnabled) auth.requestMatchers("/api/v1/products/**", "/api/v1/clusters/**").denyAll();
+                    auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/organizations").denyAll()
+                        .requestMatchers("/api/v1/system-admin/**").hasRole("SYSTEM_ADMIN")
+                        .requestMatchers("/api/v1/case-workspace/**").hasAnyRole("CASE_VIEWER", "CASE_CONTRIBUTOR")
+                        .requestMatchers("/api/v1/shipments/**", "/api/v1/organizations/**").hasAnyRole("OWNER", "ADMIN", "OPERATOR", "VIEWER")
                         .requestMatchers(
                                 "/api/v1/auth/signup",
                                 "/api/v1/auth/login",
+                                "/api/v1/auth/platform/login",
+                                "/api/v1/auth/email-verifications/confirm",
+                                "/api/v1/auth/case-links/request",
+                                "/api/v1/auth/case-links/confirm",
                                 "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout",
                                 "/api/v1/products/**",
@@ -54,16 +66,18 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/actuator/**"
                         ).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+                        .requestMatchers("/api/v1/auth/me", "/api/v1/auth/context", "/api/v1/auth/email-verifications/request",
+                                "/api/v1/me/applications", "/api/v1/organization-applications").authenticated()
+                        .anyRequest().denyAll();
+                })
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(java.util.Arrays.stream(allowedOrigins.split(",")).map(String::trim).toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -90,10 +104,4 @@ public class SecurityConfig {
         return decoder;
     }
 
-    private JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
-        authorities.setAuthoritiesClaimName("role"); authorities.setAuthorityPrefix("ROLE_");
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter(); converter.setJwtGrantedAuthoritiesConverter(authorities);
-        return converter;
-    }
 }

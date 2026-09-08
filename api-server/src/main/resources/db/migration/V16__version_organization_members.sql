@@ -1,0 +1,1 @@
+ALTER TABLE organization_member ADD COLUMN version BIGINT NOT NULL DEFAULT 0;

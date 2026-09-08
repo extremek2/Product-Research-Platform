@@ -16,18 +16,6 @@ public class IdentityService {
     private final AppUserRepository appUserRepository;
     private final OrganizationMemberRepository memberRepository;
 
-    @Transactional
-    public OrganizationResponse createOrganization(CreateOrganizationRequest request) {
-        if (appUserRepository.existsByEmailIgnoreCase(request.ownerEmail())) {
-            throw new BusinessException("이미 등록된 사용자 이메일입니다.");
-        }
-        Organization organization = organizationRepository.save(new Organization(request.name(), request.organizationType(),
-                request.businessNumber(), request.email(), request.phone()));
-        AppUser owner = appUserRepository.save(new AppUser(request.ownerEmail(), request.ownerName(), request.ownerPhone()));
-        memberRepository.save(new OrganizationMember(organization, owner, OrganizationMember.Role.OWNER));
-        return OrganizationResponse.of(organization, owner);
-    }
-
     @Transactional(readOnly = true)
     public Organization requireOrganization(UUID publicId) {
         return organizationRepository.findByPublicId(publicId)

@@ -17,6 +17,6 @@ public class OrganizationController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<OrganizationResponse> create(@Valid @RequestBody CreateOrganizationRequest request) {
-        return ApiResponse.ok("organization created", identityService.createOrganization(request));
+        throw new org.springframework.security.access.AccessDeniedException("조직 개설 신청과 관리자 승인을 이용해 주세요.");
     }
 }

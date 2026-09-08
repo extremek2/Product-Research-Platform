@@ -26,6 +26,7 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -40,9 +41,21 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // docker-java bundled with the managed Testcontainers version defaults to API 1.32.
+    systemProperty("api.version", providers.environmentVariable("DOCKER_API_VERSION").getOrElse("1.40"))
+}
+
+// Isolated browser-test fixture: uses test classes, a disposable PostgreSQL and an in-memory mailbox.
+tasks.register<JavaExec>("onboardingE2eServer") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("com.productresearch.apiserver.OnboardingE2eServer")
+    systemProperty("api.version", providers.environmentVariable("DOCKER_API_VERSION").getOrElse("1.40"))
 }

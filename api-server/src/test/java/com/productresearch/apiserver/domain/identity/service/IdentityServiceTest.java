@@ -1,52 +1,26 @@
 package com.productresearch.apiserver.domain.identity.service;
-
-import com.productresearch.apiserver.domain.identity.dto.*;
 import com.productresearch.apiserver.domain.identity.entity.*;
 import com.productresearch.apiserver.domain.identity.repository.*;
-import com.productresearch.apiserver.global.exception.BusinessException;
-import org.junit.jupiter.api.*;
+import com.productresearch.apiserver.global.exception.*;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-
+import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class IdentityServiceTest {
     @Mock OrganizationRepository organizationRepository;
     @Mock AppUserRepository appUserRepository;
     @Mock OrganizationMemberRepository memberRepository;
-    @InjectMocks IdentityService identityService;
-
-    private CreateOrganizationRequest request() {
-        return new CreateOrganizationRequest("화주 A", Organization.Type.SHIPPER, null, null, null,
-                "owner@example.com", "담당자", null);
+    @InjectMocks IdentityService service;
+    @Test void unknownOrganizationIsNotAccessible() {
+        assertThatThrownBy(() -> service.requireOrganization(UUID.randomUUID())).isInstanceOf(ResourceNotFoundException.class);
     }
-
-    @Test
-    void createsOrganizationOwnerAndMembershipTogether() {
-        when(appUserRepository.existsByEmailIgnoreCase("owner@example.com")).thenReturn(false);
-        when(organizationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(appUserRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-
-        OrganizationResponse response = identityService.createOrganization(request());
-
-        assertThat(response.organizationType()).isEqualTo(Organization.Type.SHIPPER);
-        assertThat(response.ownerStatus()).isEqualTo(AppUser.Status.INVITED);
-        assertThat(response.organizationId()).isNotNull();
-        assertThat(response.ownerUserId()).isNotNull();
-        verify(memberRepository).save(argThat(member -> member.getMemberRole() == OrganizationMember.Role.OWNER));
-    }
-
-    @Test
-    void rejectsDuplicateOwnerEmail() {
-        when(appUserRepository.existsByEmailIgnoreCase("owner@example.com")).thenReturn(true);
-
-        assertThatThrownBy(() -> identityService.createOrganization(request()))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("이미 등록된");
-        verifyNoInteractions(organizationRepository, memberRepository);
+    @Test void inactiveOrMissingMembershipIsNotAccepted() {
+        var user = new AppUser("test@example.com", "담당자", null);
+        org.mockito.Mockito.when(appUserRepository.findByPublicId(user.getPublicId())).thenReturn(java.util.Optional.of(user));
+        var organization = new Organization("화주", Organization.Type.SHIPPER, null, null, null);
+        assertThatThrownBy(() -> service.requireMember(user.getPublicId(), organization)).isInstanceOf(BusinessException.class);
     }
 }

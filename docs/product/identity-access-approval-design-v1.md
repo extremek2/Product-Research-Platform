@@ -163,26 +163,27 @@ JWT의 역할은 화면 표시 등의 힌트다. 보호된 요청마다 사용�
 승인 알림에는 로그인 안내를 넣고 세션 토큰은 넣지 않는다. 신청자는 승인 뒤 조직 컨텍스트를
 선택해 권한이 재검증된 세션을 발급받는다.
 
-### 5.2 제안 화면
+### 5.2 현재 구현 화면
 
 | 경로 | 사용자 경험 |
 |---|---|
-| /signup | 계정 및 조직 개설 신청 |
+| / | 화주 로그인·회원가입 탭. 신규 가입 후 신청 상태 화면으로 이동 |
 | /application | 이메일 확인 안내, 본인 신청 상태·반려 사유·재신청 |
+| /verify-email | 이메일 링크 확인. 명시적인 확인 버튼으로 토큰 소비 |
 | /system-admin/login | 시스템관리자 로그인 |
 | /system-admin/applications | 대기 신청 목록·필터·페이지네이션 |
 | /system-admin/applications/:id | 제출 정보, 승인·반려, 처리 이력 |
-| /settings/members | OWNER의 직원·관리자 권한 관리 |
-| /settings/partners | 화주 관리자용 업체 연락처 관리 |
-| /shipments/:id/participants | 업체별 최대 3명 초대·상태 확인·철회 |
-| /join | 이메일 인증 확인·참여 수락 후 해당 건 진입 |
+| /organization/members | OWNER·ADMIN의 직원 권한 관리 |
+| /shipments/:id | 화주 관리자의 업체 연결, 담당자 초대·상태 확인·철회 |
+| /external-access | 이메일 접속 링크 확인·재요청 |
+| /external-case | CASE 세션으로 초대받은 건 조회·허용된 문서번호 등록 |
 
 이메일 발송 제공자나 내부 토큰 구조는 제품 화면에 노출하지 않는다.
 시스템관리자 화면을 숨기는 것과 별개로 API가 매번 시스템 역할을 검사한다.
 
-### 5.3 제안 API
+### 5.3 현재 구현 API
 
-기존 /api/v1 prefix와 응답 envelope를 유지한다. 아래 경로는 구현 계약 제안이다.
+기존 `/api/v1` prefix와 응답 envelope를 유지한다. 아래 경로는 1~5단계 구현과 검증에 반영된 현재 계약이다. 후속 변경은 해당 단계의 구현 문서와 컨트롤러를 함께 갱신한다.
 
 | API | 접근·동작 |
 |---|---|
@@ -190,13 +191,18 @@ JWT의 역할은 화면 표시 등의 힌트다. 보호된 요청마다 사용�
 | POST /auth/email-verifications/request, /confirm | 이메일 확인 요청·소비 |
 | GET /me/applications | 본인 신청만 조회 |
 | POST /organization-applications | 로그인 사용자의 신규/반려 후 신청 |
-| POST /auth/context | 현재 권한 검증 후 조직·플랫폼·건 컨텍스트 선택 |
+| POST /auth/context | 현재 권한 검증 후 ACCOUNT·ORGANIZATION·PLATFORM 컨텍스트 선택. CASE는 이메일 링크로만 발급 |
 | GET /system-admin/applications, /{id} | 시스템관리자 검토 목록·상세 |
 | POST /system-admin/applications/{id}/approve, /reject | version과 처리 사유를 포함한 결정 |
-| PATCH /organizations/{id}/members/{memberId}/role | OWNER의 ADMIN 등 조직 역할 관리 |
-| POST /shipments/{id}/participants | OWNER·ADMIN의 업체 담당자 초대 |
-| POST /participants/{id}/revoke | 소유 조직 OWNER·ADMIN의 참여 철회 |
-| POST /auth/case-links/request, /consume | 이메일 접속 링크 재발급·인증 |
+| GET/POST /organizations/current/members | 현재 조직의 직원 목록·추가 |
+| PATCH /organizations/current/members/{userId} | OWNER·ADMIN의 허용 범위 내 역할·상태 변경 |
+| GET/POST /organizations/current/partners | 현재 조직의 외부 업체 목록·등록 |
+| GET/POST /shipments/{shipmentId}/partners | 건별 업체 목록·연결 |
+| POST /shipments/{shipmentId}/partners/{partnerId}/invitations | 업체 담당자 초대 |
+| POST /shipments/{shipmentId}/participants/{participantId}/revoke | 건별 참여 철회 |
+| POST /auth/case-links/request, /confirm | 이메일 접속 링크 재발급·확인 및 CASE 세션 발급 |
+| GET /case-workspace/{shipmentId} | CASE 세션의 초대받은 건 조회 |
+| POST /case-workspace/{shipmentId}/documents | CONTRIBUTOR의 운송 문서번호 등록 |
 
 유효하지 않은 인증은 401, 인증은 됐지만 작업 권한이 없으면 403, 범위 밖 자원 조회는
 존재를 노출하지 않도록 404, 상태 경쟁·제약 충돌은 409로 일관되게 처리한다.
